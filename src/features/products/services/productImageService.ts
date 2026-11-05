@@ -2,6 +2,7 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase";
 import type { ProductImage } from "../types/productImage";
 import { PRODUCT_IMAGES_BUCKET } from "../../../shared/constants/storage";
+import { hasImageSignature } from "../../../shared/utils/hasImageSignature";
 
 export const MAX_PRODUCT_IMAGES = 8;
 
@@ -51,12 +52,15 @@ function mapDatabaseError(error: PostgrestError): Error {
         "Esta imagem já está cadastrada.",
       );
 
+    case "23514":
+      return new ProductImagePersistenceError(error.message);
+
     default:
       return new ProductImagePersistenceError();
   }
 }
 
-export function validateProductImage(file: File): void {
+export async function validateProductImage(file: File): Promise<void> {
   if (!imageExtensions[file.type]) {
     throw new ProductImageValidationError(
       `O arquivo "${file.name}" não possui um formato permitido.`,
@@ -74,6 +78,10 @@ export function validateProductImage(file: File): void {
       `O arquivo "${file.name}" está vazio.`,
     );
   }
+
+  if (!await hasImageSignature(file)) {
+    throw new ProductImageValidationError(`O conteúdo de "${file.name}" não corresponde ao formato informado.`);
+  }
 }
 
 function createStoragePath(productId: string, file: File): string {
@@ -82,14 +90,6 @@ function createStoragePath(productId: string, file: File): string {
   return ["produtos", productId, `${crypto.randomUUID()}.${extension}`].join(
     "/",
   );
-}
-
-function getPublicUrl(storagePath: string): string {
-  const { data } = supabase.storage
-    .from(PRODUCT_IMAGES_BUCKET)
-    .getPublicUrl(storagePath);
-
-  return data.publicUrl;
 }
 
 export async function listProductImages(
@@ -107,9 +107,11 @@ export async function listProductImages(
     throw mapDatabaseError(error);
   }
 
-  return data.map((image) => ({
-    ...image,
-    publicUrl: getPublicUrl(image.storage_path),
+  return Promise.all(data.map(async (image) => {
+    const { data: signed, error: signError } = await supabase.storage
+      .from(PRODUCT_IMAGES_BUCKET).createSignedUrl(image.storage_path, 3600);
+    if (signError) throw new ProductImagePersistenceError("Não foi possível carregar a imagem.");
+    return { ...image, publicUrl: signed.signedUrl };
   }));
 }
 
@@ -144,7 +146,7 @@ export async function uploadProductImages(
     );
   }
 
-  files.forEach(validateProductImage);
+  await Promise.all(files.map(validateProductImage));
 
   /*
    * Enviamos sequencialmente para que as posições sejam
@@ -194,22 +196,6 @@ export async function uploadProductImages(
 }
 
 export async function deleteProductImage(image: ProductImage): Promise<void> {
-  /*
-   * Arquivos devem ser removidos pela API do Storage, e não
-   * apagando diretamente registros de storage.objects.
-   */
-  const { error: storageError } = await supabase.storage
-    .from(PRODUCT_IMAGES_BUCKET)
-    .remove([image.storage_path]);
-
-  if (storageError) {
-    console.error("Erro ao remover arquivo do Storage:", storageError);
-
-    throw new ProductImagePersistenceError(
-      "Não foi possível excluir o arquivo da imagem.",
-    );
-  }
-
   const { error: databaseError } = await supabase.rpc(
     "excluir_imagem_produto",
     {
@@ -219,6 +205,15 @@ export async function deleteProductImage(image: ProductImage): Promise<void> {
 
   if (databaseError) {
     throw mapDatabaseError(databaseError);
+  }
+
+  const { error: storageError } = await supabase.storage
+    .from(PRODUCT_IMAGES_BUCKET).remove([image.storage_path]);
+  if (storageError) {
+    console.error("Arquivo órfão após excluir registro da imagem:", storageError);
+    throw new ProductImagePersistenceError(
+      "A imagem saiu do produto, mas o arquivo permaneceu no Storage. Execute a auditoria de órfãos.",
+    );
   }
 }
 

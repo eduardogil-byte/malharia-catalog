@@ -1,5 +1,5 @@
 import { supabase } from "../../../lib/supabase";
-import { PRODUCT_IMAGES_BUCKET } from "../../../shared/constants/storage";
+import { signProductImage } from "../../catalog/services/signProductImage";
 import type { Json } from "../../../types/database.types";
 import type {
   PublicProduct,
@@ -52,29 +52,21 @@ export class PublicHomeError extends Error {
   }
 }
 
-function getPublicImageUrl(storagePath: string): string {
-  const { data } = supabase.storage
-    .from(PRODUCT_IMAGES_BUCKET)
-    .getPublicUrl(storagePath);
-
-  return data.publicUrl;
-}
-
-function mapProductImage(image: ProductImageDatabaseRow): PublicProductImage {
+async function mapProductImage(image: ProductImageDatabaseRow): Promise<PublicProductImage> {
   return {
     id: image.id,
     storagePath: image.storage_path,
     altText: image.alt_text,
     posicao: image.posicao,
-    publicUrl: getPublicImageUrl(image.storage_path),
+    publicUrl: await signProductImage(image.storage_path),
   };
 }
 
-function mapPublicProduct(product: HomeProductDatabaseRow): PublicProduct {
-  const images = (product.imagens ?? [])
+async function mapPublicProduct(product: HomeProductDatabaseRow): Promise<PublicProduct> {
+  const images = await Promise.all((product.imagens ?? [])
     .slice()
     .sort((firstImage, secondImage) => firstImage.posicao - secondImage.posicao)
-    .map(mapProductImage);
+    .map(mapProductImage));
 
   return {
     id: product.id,
@@ -204,7 +196,7 @@ export async function listPublicHomeSections(): Promise<PublicHomeSection[]> {
 
     const currentProducts = productsBySection.get(item.secao_id) ?? [];
 
-    currentProducts.push(mapPublicProduct(item.produtos));
+    currentProducts.push(await mapPublicProduct(item.produtos));
 
     productsBySection.set(item.secao_id, currentProducts);
   }

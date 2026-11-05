@@ -1,6 +1,7 @@
 import type { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase";
 import { SITE_ASSETS_BUCKET } from "../../../shared/constants/siteAssets";
+import { hasImageSignature } from "../../../shared/utils/hasImageSignature";
 import type {
   SiteAssetKind,
   SiteSettings,
@@ -227,7 +228,7 @@ export async function updateSiteSettings(
   return mapSiteSettings(data as SettingsDatabaseRow);
 }
 
-function validateSiteAsset(file: File): void {
+async function validateSiteAsset(file: File): Promise<void> {
   if (!imageExtensions[file.type]) {
     throw new SiteSettingsValidationError(
       `O arquivo "${file.name}" deve ser JPEG, PNG ou WebP.`,
@@ -244,6 +245,9 @@ function validateSiteAsset(file: File): void {
     throw new SiteSettingsValidationError(
       `O arquivo "${file.name}" ultrapassa o limite de 5 MB.`,
     );
+  }
+  if (!await hasImageSignature(file)) {
+    throw new SiteSettingsValidationError(`O conteúdo de "${file.name}" não corresponde ao formato informado.`);
   }
 }
 
@@ -312,7 +316,7 @@ export async function uploadSiteAsset(
   file: File,
   currentPath: string | null,
 ): Promise<SiteSettings> {
-  validateSiteAsset(file);
+  await validateSiteAsset(file);
 
   const newPath = createAssetPath(kind, file);
 

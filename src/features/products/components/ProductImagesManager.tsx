@@ -107,6 +107,8 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
     } catch (error) {
       console.error("Erro ao enviar imagens:", error);
 
+      await loadImages();
+
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -223,6 +225,8 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
       setSuccessMessage("Imagem excluída com sucesso.");
     } catch (error) {
       console.error("Erro ao excluir imagem:", error);
+
+      await loadImages();
 
       setErrorMessage(
         error instanceof Error

@@ -432,10 +432,11 @@ export function ProductForm({
             >
               <option value="rascunho">Rascunho</option>
 
-              <option value="publicado">Publicado</option>
+              <option value="publicado" disabled={!product}>Publicado</option>
 
               <option value="arquivado">Arquivado</option>
             </select>
+            {!product && <p className="mt-2 text-xs text-stone-500">Salve o rascunho e envie uma imagem antes de publicar.</p>}
           </div>
 
           <label className="flex items-center gap-3 rounded-lg border border-stone-200 p-4">

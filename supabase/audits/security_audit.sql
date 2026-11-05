@@ -557,3 +557,22 @@ group by
 order by
   policy.schemaname,
   policy.tablename;
+
+
+-- 21. PRODUTOS PUBLICADOS SEM IMAGEM VÁLIDA
+-- Resultado esperado: nenhuma linha.
+select produto.id, produto.slug
+from public.produtos as produto
+where produto.status = 'publicado'
+  and not exists (
+    select 1 from public.produto_imagens as imagem
+    join storage.objects as objeto
+      on objeto.bucket_id = 'catalogo-produtos'
+      and objeto.name = imagem.storage_path
+    where imagem.produto_id = produto.id
+  );
+
+
+-- 22. BUCKET DE PRODUTOS NÃO PODE SER PÚBLICO
+-- Resultado esperado: false.
+select public from storage.buckets where id = 'catalogo-produtos';

@@ -81,7 +81,7 @@ function mapProductError(error: PostgrestError): Error {
 
     case "23514":
       return new ProductPersistenceError(
-        "Os dados informados não atendem às regras do produto.",
+        error.message || "Os dados informados não atendem às regras do produto.",
       );
 
     default:
