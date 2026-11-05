@@ -13,6 +13,7 @@ import type {
 } from "../types/product";
 
 export function useAdminProducts(filters: ProductListFilters) {
+  const { search, categoryId, status } = filters;
   const [products, setProducts] = useState<ProductWithCategory[]>([]);
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -26,7 +27,7 @@ export function useAdminProducts(filters: ProductListFilters) {
     setLoadError(null);
 
     try {
-      const data = await listProductsAdmin(filters);
+      const data = await listProductsAdmin({ search, categoryId, status });
 
       setProducts(data);
     } catch (error) {
@@ -40,7 +41,7 @@ export function useAdminProducts(filters: ProductListFilters) {
     } finally {
       setIsLoading(false);
     }
-  }, [filters.search, filters.categoryId, filters.status]);
+  }, [search, categoryId, status]);
 
   const loadCategories = useCallback(async () => {
     try {

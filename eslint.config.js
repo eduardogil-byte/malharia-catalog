@@ -18,5 +18,16 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Existing data-loading effects and form resets use this pattern deliberately.
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+  {
+    files: ['src/features/{auth,site-settings}/**/*Context.tsx'],
+    rules: {
+      // These provider modules also export their associated context hook.
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])

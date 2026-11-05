@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useLocation } from "react-router";
 import { AuthLoadingScreen } from "../../features/auth/components/AuthLoadingScreen";
 import { useAuth } from "../../features/auth/hooks/useAuth";
@@ -36,6 +36,9 @@ function getSafeAdminRedirect(state: unknown): string {
 }
 
 export function AdminLoginPage() {
+  useEffect(() => {
+    document.title = "Entrar no painel | Malharia Catalog";
+  }, []);
   const location = useLocation();
   const { status, signIn } = useAuth();
 

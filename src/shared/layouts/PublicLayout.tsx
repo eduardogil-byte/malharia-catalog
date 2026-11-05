@@ -6,6 +6,8 @@ import { PublicSiteSettingsProvider, usePublicSiteSettings } from "../../feature
 import { RouteFocusManager } from "../components/RouteFocusManager";
 import { SkipLink } from "../components/SkipLink";
 
+const defaultDescription = "Conheça malhas, roupas de malha e produtos artesanais. Veja os detalhes no catálogo e converse pelo WhatsApp.";
+
 function PublicLayoutContent() {
   const location = useLocation();
   const { settings } = usePublicSiteSettings();
@@ -19,6 +21,8 @@ function PublicLayoutContent() {
     const title = `${section} | ${brand}`;
     document.title = title;
     document.querySelector('meta[property="og:title"]')?.setAttribute("content", title);
+    document.querySelector('meta[name="description"]')?.setAttribute("content", defaultDescription);
+    document.querySelector('meta[property="og:description"]')?.setAttribute("content", defaultDescription);
   }, [location.pathname, settings?.nomeMarca]);
 
   return (
