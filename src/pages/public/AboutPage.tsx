@@ -10,15 +10,15 @@ export function AboutPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-20 text-center text-stone-600 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-20 text-center text-stone-600 sm:px-6 lg:px-8">
         Carregando informações...
-      </main>
+      </div>
     );
   }
 
   if (loadError) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-8">
           <p className="text-red-800">{loadError}</p>
 
@@ -30,7 +30,7 @@ export function AboutPage() {
             Tentar novamente
           </button>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -39,7 +39,7 @@ export function AboutPage() {
   const aboutText = settings?.textoSobre?.trim() || defaultAboutText;
 
   return (
-    <main>
+    <div>
       <section className="bg-stone-50">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:px-8 lg:py-28">
           <div>
@@ -97,6 +97,6 @@ export function AboutPage() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

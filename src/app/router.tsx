@@ -1,23 +1,20 @@
+import { Suspense, type ReactNode } from "react";
 import { createBrowserRouter } from "react-router";
-import { AdminDashboardPage } from "../pages/admin/AdminDashboardPage";
-import { AdminLoginPage } from "../pages/admin/AdminLoginPage";
-import { NotFoundPage } from "../pages/public/NotFoundPage";
-import { AboutPage } from "../pages/public/AboutPage";
-import { CatalogPage } from "../pages/public/CatalogPage";
-import { ContactPage } from "../pages/public/ContactPage";
 import { HomePage } from "../pages/public/HomePage";
-import { ProductPage } from "../pages/public/ProductPage";
 import { AdminLayout } from "../shared/layouts/AdminLayout";
 import { PublicLayout } from "../shared/layouts/PublicLayout";
 import { AdminProtectedRoute } from "../features/auth/components/AdminProtectedRoute";
-import { CategoriesPage } from "../pages/admin/CategoriesPage";
-import { ProductsPage } from "../pages/admin/ProductsPage";
-import { ProductFormPage } from "../pages/admin/ProductFormPage";
-import { HomeSectionsPage } from "../pages/admin/HomeSectionsPage";
-import { HomeSectionProductsPage } from "../pages/admin/HomeSectionProductsPage";
-import { SiteSettingsPage } from "../pages/admin/SiteSettingsPage";
 import { RouteErrorPage } from "../components/shared/RouteErrorPage";
-import { AdminNotFoundPage } from "../pages/admin/AdminNotFoundPage";
+import {
+  AboutPage, AdminDashboardPage, AdminLoginPage, AdminNotFoundPage,
+  CatalogPage, CategoriesPage, ContactPage, HomeSectionProductsPage,
+  HomeSectionsPage, NotFoundPage, ProductFormPage, ProductPage,
+  ProductsPage, SiteSettingsPage,
+} from "./routePages";
+
+function page(content: ReactNode) {
+  return <Suspense fallback={<div role="status" className="p-8 text-center text-sm text-stone-600">Carregando página...</div>}>{content}</Suspense>;
+}
 
 export const router = createBrowserRouter([
   {
@@ -31,29 +28,25 @@ export const router = createBrowserRouter([
       },
       {
         path: "catalogo",
-        element: <CatalogPage />,
+        element: page(<CatalogPage />),
       },
       {
         path: "produto/:slug",
-        element: <ProductPage />,
+        element: page(<ProductPage />),
       },
       {
         path: "sobre",
-        element: <AboutPage />,
+        element: page(<AboutPage />),
       },
       {
         path: "contato",
-        element: <ContactPage />,
+        element: page(<ContactPage />),
       },
     ],
   },
   {
     path: "/admin/login",
-    element: <AdminLoginPage />,
-  },
-  {
-    path: "/admin/login",
-    element: <AdminLoginPage />,
+    element: page(<AdminLoginPage />),
   },
   {
     element: <AdminProtectedRoute />,
@@ -64,39 +57,39 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <AdminDashboardPage />,
+            element: page(<AdminDashboardPage />),
           },
           {
             path: "produtos",
-            element: <ProductsPage />,
+            element: page(<ProductsPage />),
           },
           {
             path: "produtos/novo",
-            element: <ProductFormPage />,
+            element: page(<ProductFormPage />),
           },
           {
             path: "produtos/:productId/editar",
-            element: <ProductFormPage />,
+            element: page(<ProductFormPage />),
           },
           {
             path: "categorias",
-            element: <CategoriesPage />,
+            element: page(<CategoriesPage />),
           },
           {
             path: "pagina-inicial",
-            element: <HomeSectionsPage />,
+            element: page(<HomeSectionsPage />),
           },
           {
             path: "pagina-inicial/:sectionId/produtos",
-            element: <HomeSectionProductsPage />,
+            element: page(<HomeSectionProductsPage />),
           },
           {
             path: "configuracoes",
-            element: <SiteSettingsPage />,
+            element: page(<SiteSettingsPage />),
           },
           {
             path: "*",
-            element: <AdminNotFoundPage />,
+            element: page(<AdminNotFoundPage />),
           },
         ],
       },
@@ -104,6 +97,6 @@ export const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <NotFoundPage />,
+    element: page(<NotFoundPage />),
   },
 ]);

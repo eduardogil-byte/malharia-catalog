@@ -38,6 +38,7 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
   const [isReordering, setIsReordering] = useState(false);
 
@@ -101,7 +102,11 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
     setIsUploading(true);
 
     try {
-      await uploadProductImages(productId, selectedFiles, images.length);
+      await uploadProductImages(productId, selectedFiles, images.length, (current, total, stage) => {
+        setUploadProgress(
+          `${stage === "preparing" ? "Preparando" : "Enviando"} foto ${current} de ${total}...`,
+        );
+      });
 
       setSelectedFiles([]);
 
@@ -124,6 +129,7 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
       );
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   }
 
@@ -252,7 +258,7 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
     isUploading || isReordering || deletingImageId !== null;
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-6">
+    <section className="rounded-lg border border-stone-200 bg-white p-4 sm:p-6">
       <div>
         <h2 className="text-xl font-semibold text-stone-950">
           Imagens do produto
@@ -261,6 +267,9 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
         <p className="mt-1 text-sm leading-6 text-stone-600">
           Envie até {MAX_PRODUCT_IMAGES} imagens. A imagem na posição 1 será
           utilizada como capa do produto.
+        </p>
+        <p className="mt-2 text-sm leading-6 text-stone-600">
+          Antes do envio, as fotos são reduzidas e convertidas para WebP quando isso diminui o arquivo.
         </p>
       </div>
 
@@ -288,7 +297,9 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
         </p>
       )}
 
-      <div className="mt-6 rounded-xl border border-dashed border-stone-300 p-5">
+      {uploadProgress && <p role="status" className="mt-5 text-sm font-medium text-stone-700">{uploadProgress}</p>}
+
+      <div className="mt-6 rounded-md border border-dashed border-stone-300 p-4 sm:p-5">
         <label
           htmlFor="product-images"
           className="block text-sm font-medium text-stone-700"
@@ -304,12 +315,11 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
           accept="image/jpeg,image/png,image/webp"
           onChange={handleFilesChange}
           disabled={interactionsDisabled || remainingSlots === 0}
-          className="mt-3 block w-full text-sm text-stone-600 file:mr-4 file:rounded-lg file:border-0 file:bg-stone-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-stone-700 disabled:opacity-50"
+          className="mt-3 block w-full text-sm text-stone-600 file:mr-4 file:rounded-md file:border-0 file:bg-stone-900 file:px-4 file:py-3 file:text-sm file:font-medium file:text-white hover:file:bg-stone-700 disabled:opacity-50"
         />
 
         <p className="mt-3 text-xs text-stone-500">
-          JPEG, PNG ou WebP. Máximo de 5 MB por arquivo. Restam {remainingSlots}{" "}
-          espaços.
+          JPEG, PNG ou WebP de até 20 MB antes da otimização; o arquivo enviado terá no máximo 5 MB. Restam {remainingSlots} espaços.
         </p>
 
         {selectedFiles.length > 0 && (
@@ -328,7 +338,7 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
               type="button"
               onClick={() => void handleUpload()}
               disabled={interactionsDisabled}
-              className="mt-4 rounded-lg bg-stone-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-4 min-h-12 w-full rounded-md bg-stone-900 px-4 py-3 text-sm font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {isUploading
                 ? "Enviando..."
@@ -366,6 +376,7 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
                       src={image.publicUrl}
                       alt={image.alt_text ?? "Imagem do produto"}
                       loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover"
                     />
 

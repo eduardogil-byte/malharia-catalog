@@ -437,6 +437,13 @@ export function ProductForm({
               <option value="arquivado">Arquivado</option>
             </select>
             {!product && <p className="mt-2 text-xs text-stone-500">Salve o rascunho e envie uma imagem antes de publicar.</p>}
+            <p className="mt-2 text-sm leading-6 text-stone-600">
+              {values.status === "rascunho"
+                ? "Só você vê este produto no painel."
+                : values.status === "publicado"
+                  ? "Clientes podem encontrar este produto no catálogo. É necessária pelo menos uma foto."
+                  : "O produto sai do catálogo, mas continua salvo no painel."}
+            </p>
           </div>
 
           <label className="flex items-center gap-3 rounded-lg border border-stone-200 p-4">
@@ -455,11 +462,11 @@ export function ProductForm({
 
             <span>
               <span className="block text-sm font-medium text-stone-900">
-                Produto disponível
+                Disponível para consulta
               </span>
 
               <span className="block text-xs text-stone-500">
-                Produtos indisponíveis podem ser exibidos com essa indicação.
+                Mesmo publicado, um produto indisponível aparece com um aviso para o cliente.
               </span>
             </span>
           </label>
@@ -592,12 +599,12 @@ export function ProductForm({
         )}
       </section>
 
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="rounded-lg border border-stone-300 px-5 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 disabled:opacity-50"
+          className="min-h-12 rounded-lg border border-stone-300 px-5 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 disabled:opacity-50"
         >
           Cancelar
         </button>
@@ -605,7 +612,7 @@ export function ProductForm({
         <button
           type="submit"
           disabled={isSubmitting || !hasCategories}
-          className="rounded-lg bg-stone-900 px-5 py-3 text-sm font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-12 rounded-lg bg-stone-900 px-5 py-3 text-sm font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting
             ? "Salvando..."

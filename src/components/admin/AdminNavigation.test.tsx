@@ -11,7 +11,7 @@ describe("AdminNavigation", () => {
 
     expect(
       screen.getByRole("link", {
-        name: "Dashboard",
+        name: "Visão geral",
       }),
     ).toHaveAttribute("href", "/admin");
 

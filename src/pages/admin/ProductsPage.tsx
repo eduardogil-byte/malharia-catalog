@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { useAdminProducts } from "../../features/products/hooks/useAdminProducts";
 import type {
   ProductListFilters,
@@ -60,6 +60,8 @@ function formatDate(value: string): string {
 }
 
 export function ProductsPage() {
+  const location = useLocation();
+  const navigationNotice = typeof location.state?.notice === "string" ? location.state.notice : null;
   const [draftFilters, setDraftFilters] =
     useState<ProductListFilters>(initialFilters);
 
@@ -203,18 +205,18 @@ export function ProductsPage() {
 
         <Link
           to="/admin/produtos/novo"
-          className="rounded-lg bg-stone-900 px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-stone-700"
+          className="inline-flex min-h-12 items-center justify-center rounded-lg bg-stone-900 px-4 py-3 text-center text-sm font-medium text-white hover:bg-stone-700"
         >
           Novo produto
         </Link>
       </header>
 
-      {successMessage && (
+      {!actionError && (successMessage || navigationNotice) && (
         <div
           role="status"
           className="mt-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
         >
-          {successMessage}
+          {successMessage || navigationNotice}
         </div>
       )}
 
@@ -317,7 +319,7 @@ export function ProductsPage() {
           <div className="flex items-end gap-2">
             <button
               type="submit"
-              className="rounded-lg bg-stone-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-stone-700"
+              className="min-h-12 flex-1 rounded-lg bg-stone-900 px-4 py-3 text-sm font-medium text-white hover:bg-stone-700 lg:flex-none"
             >
               Filtrar
             </button>
@@ -325,7 +327,7 @@ export function ProductsPage() {
             <button
               type="button"
               onClick={clearFilters}
-              className="rounded-lg border border-stone-300 px-4 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
+              className="min-h-12 flex-1 rounded-lg border border-stone-300 px-4 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 lg:flex-none"
             >
               Limpar
             </button>
@@ -388,6 +390,49 @@ export function ProductsPage() {
               </p>
             </div>
 
+            <div className="divide-y divide-stone-200 lg:hidden">
+              {products.map((product) => {
+                const isActing = actingProductId === product.id;
+                return (
+                  <article key={product.id} className="p-4 sm:p-5">
+                    <h2 className="text-lg font-semibold text-stone-950">{product.nome}</h2>
+                    <p className="mt-1 text-sm text-stone-600">{product.categoria?.nome ?? "Categoria indisponível"}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className={["inline-flex rounded-full px-3 py-1 text-xs font-medium", getStatusClasses(product.status)].join(" ")}>
+                        {getStatusLabel(product.status)}
+                      </span>
+                      <span className={[
+                        "inline-flex rounded-full px-3 py-1 text-xs font-medium",
+                        product.disponivel ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800",
+                      ].join(" ")}>
+                        {product.disponivel ? "Disponível" : "Indisponível"}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-xs text-stone-500">Atualizado em {formatDate(product.updated_at)}</p>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <Link to={`/admin/produtos/${product.id}/editar`} className="inline-flex min-h-11 items-center justify-center rounded-md bg-stone-900 px-3 py-2 text-sm font-medium text-white">
+                        Editar
+                      </Link>
+                      {product.status === "arquivado" ? (
+                        <button type="button" onClick={() => void handleRestore(product)} disabled={isActing} className="min-h-11 rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-800 disabled:opacity-50">
+                          {isActing ? "Aguarde..." : "Restaurar"}
+                        </button>
+                      ) : (
+                        <button type="button" onClick={() => void handleArchive(product)} disabled={isActing} className="min-h-11 rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-800 disabled:opacity-50">
+                          {isActing ? "Aguarde..." : "Arquivar"}
+                        </button>
+                      )}
+                      {product.status === "arquivado" && (
+                        <button type="button" onClick={() => void handleDelete(product)} disabled={isActing} className="col-span-2 min-h-11 rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-700 disabled:opacity-50">
+                          {isActing ? "Aguarde..." : "Excluir definitivamente"}
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+            <div className="hidden lg:block">
             <ResponsiveTableRegion label="Lista administrativa de produtos">
               <table className="w-full min-w-[980px] border-collapse text-left">
                 <thead className="bg-stone-50">
@@ -519,6 +564,7 @@ export function ProductsPage() {
                 </tbody>
               </table>
             </ResponsiveTableRegion>
+            </div>
           </div>
         )}
       </div>

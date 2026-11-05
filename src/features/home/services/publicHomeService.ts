@@ -30,10 +30,10 @@ type HomeProductDatabaseRow = {
   nome: string;
   slug: string;
   descricao_curta: string | null;
-  descricao: string | null;
+  descricao?: string | null;
   disponivel: boolean;
-  atributos: Json;
-  mensagem_whatsapp: string | null;
+  atributos?: Json;
+  mensagem_whatsapp?: string | null;
   status: string;
   categoria: PublicProductCategory | null;
   imagens: ProductImageDatabaseRow[] | null;
@@ -66,6 +66,7 @@ async function mapPublicProduct(product: HomeProductDatabaseRow): Promise<Public
   const images = await Promise.all((product.imagens ?? [])
     .slice()
     .sort((firstImage, secondImage) => firstImage.posicao - secondImage.posicao)
+    .slice(0, 1)
     .map(mapProductImage));
 
   return {
@@ -74,10 +75,10 @@ async function mapPublicProduct(product: HomeProductDatabaseRow): Promise<Public
     nome: product.nome,
     slug: product.slug,
     descricaoCurta: product.descricao_curta,
-    descricao: product.descricao,
+    descricao: product.descricao ?? null,
     disponivel: product.disponivel,
-    atributos: product.atributos,
-    mensagemWhatsapp: product.mensagem_whatsapp,
+    atributos: product.atributos ?? {},
+    mensagemWhatsapp: product.mensagem_whatsapp ?? null,
     categoria: product.categoria,
     imagens: images,
   };
@@ -140,10 +141,7 @@ export async function listPublicHomeSections(): Promise<PublicHomeSection[]> {
         nome,
         slug,
         descricao_curta,
-        descricao,
         disponivel,
-        atributos,
-        mensagem_whatsapp,
         status,
         categoria:categorias!produtos_categoria_id_fkey (
           id,
@@ -188,6 +186,7 @@ export async function listPublicHomeSections(): Promise<PublicHomeSection[]> {
   );
 
   const productsBySection = new Map<string, PublicProduct[]>();
+  const sectionLimits = new Map(sections.map((section) => [section.id, section.limite_produtos]));
 
   for (const item of sortedSectionProducts) {
     if (!item.produtos) {
@@ -195,6 +194,9 @@ export async function listPublicHomeSections(): Promise<PublicHomeSection[]> {
     }
 
     const currentProducts = productsBySection.get(item.secao_id) ?? [];
+    if (currentProducts.length >= (sectionLimits.get(item.secao_id) ?? 0)) {
+      continue;
+    }
 
     currentProducts.push(await mapPublicProduct(item.produtos));
 

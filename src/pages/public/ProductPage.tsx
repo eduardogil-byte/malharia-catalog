@@ -20,6 +20,17 @@ export function ProductPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const brand = settings?.nomeMarca?.trim() || "Malharia Catalog";
+    const title = `${product?.nome ?? "Produto"} | ${brand}`;
+    document.title = title;
+    document.querySelector('meta[property="og:title"]')?.setAttribute("content", title);
+    const description = product?.descricaoCurta ?? "Conheça este produto e consulte os detalhes pelo WhatsApp.";
+    document.querySelector('meta[name="description"]')?.setAttribute("content", description);
+    document.querySelector('meta[property="og:description"]')?.setAttribute("content", description);
+  }, [product, settings?.nomeMarca]);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,15 +92,15 @@ export function ProductPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-16 text-center text-stone-600 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-16 text-center text-stone-600 sm:px-6 lg:px-8">
         Carregando produto...
-      </main>
+      </div>
     );
   }
 
   if (loadError) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <p className="text-red-700">{loadError}</p>
 
         <Link
@@ -98,13 +109,13 @@ export function ProductPage() {
         >
           Voltar ao catálogo
         </Link>
-      </main>
+      </div>
     );
   }
 
   if (!product) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <h1 className="text-3xl font-semibold text-stone-950">
           Produto não encontrado
         </h1>
@@ -119,7 +130,7 @@ export function ProductPage() {
         >
           Voltar ao catálogo
         </Link>
-      </main>
+      </div>
     );
   }
 
@@ -132,8 +143,22 @@ export function ProductPage() {
       })
     : null;
 
+  async function handleShare() {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: product?.nome, url: window.location.href });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setShareMessage("Link do produto copiado.");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setShareMessage("Não foi possível compartilhar o link neste navegador.");
+    }
+  }
+
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
       <nav
         aria-label="Navegação estrutural"
         className="mb-8 text-xs font-medium uppercase tracking-[0.1em] text-stone-500 lg:mb-10"
@@ -216,6 +241,15 @@ export function ProductPage() {
             </a>
           )}
 
+          <button
+            type="button"
+            onClick={() => void handleShare()}
+            className="button-secondary mt-3 flex w-full"
+          >
+            Compartilhar produto
+          </button>
+          {shareMessage && <p role="status" className="mt-2 text-sm text-stone-700">{shareMessage}</p>}
+
           {!settings?.whatsapp && (
             <p className="mt-8 rounded-lg bg-stone-100 px-4 py-3 text-sm text-stone-600">
               O contato pelo WhatsApp ainda não foi configurado.
@@ -235,6 +269,6 @@ export function ProductPage() {
           </p>
         </section>
       )}
-    </main>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { listCategoriesAdmin } from "../../features/categories/services/categoryService";
 import type { Category } from "../../features/categories/types/category";
 import { ProductForm } from "../../features/products/components/ProductForm";
@@ -15,6 +15,8 @@ import { ProductImagesManager } from "../../features/products/components/Product
 
 export function ProductFormPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const navigationNotice = typeof location.state?.notice === "string" ? location.state.notice : null;
 
   const { productId } = useParams<{
     productId: string;
@@ -107,6 +109,7 @@ export function ProductFormPage() {
 
         navigate("/admin/produtos", {
           replace: true,
+          state: { notice: "Produto salvo com sucesso." },
         });
 
         return;
@@ -116,6 +119,7 @@ export function ProductFormPage() {
 
       navigate(`/admin/produtos/${createdProduct.id}/editar`, {
         replace: true,
+        state: { notice: "Rascunho salvo. Adicione as fotos e depois publique o produto." },
       });
     } catch (error) {
       setSaveError(
@@ -162,7 +166,14 @@ export function ProductFormPage() {
         <h1 className="mt-3 text-4xl font-semibold text-stone-950">
           {isEditing ? "Editar produto" : "Novo produto"}
         </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-600">
+          {isEditing
+            ? "Organize as fotos e os dados do produto. Para publicar, escolha o status no formulário abaixo."
+            : "Comece pelos dados do produto. Depois de salvar o rascunho, você poderá adicionar as fotos e publicar."}
+        </p>
       </header>
+
+      {navigationNotice && <div role="status" className="mb-6 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">{navigationNotice}</div>}
 
       {saveError && (
         <div
@@ -173,19 +184,21 @@ export function ProductFormPage() {
         </div>
       )}
 
-      <ProductForm
-        product={product}
-        categories={categories}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmit}
-        onCancel={() => navigate("/admin/produtos")}
-      />
-
       {product && (
-        <div className="mt-8">
+        <div id="product-photos" className="mb-8">
           <ProductImagesManager productId={product.id} />
         </div>
       )}
+
+      <div id="product-details">
+        <ProductForm
+          product={product}
+          categories={categories}
+          isSubmitting={isSubmitting}
+          onSubmit={handleSubmit}
+          onCancel={() => navigate("/admin/produtos")}
+        />
+      </div>
     </section>
   );
 }

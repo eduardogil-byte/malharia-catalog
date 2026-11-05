@@ -8,7 +8,7 @@ type AdminNavigationProps = {
 
 const navigationItems = [
   {
-    label: "Dashboard",
+    label: "Visão geral",
     to: "/admin",
     end: true,
   },

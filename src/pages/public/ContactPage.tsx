@@ -14,15 +14,15 @@ export function ContactPage() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-20 text-center text-stone-600 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-20 text-center text-stone-600 sm:px-6 lg:px-8">
         Carregando contatos...
-      </main>
+      </div>
     );
   }
 
   if (loadError) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-8">
           <p className="text-red-800">{loadError}</p>
 
@@ -34,7 +34,7 @@ export function ContactPage() {
             Tentar novamente
           </button>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -56,7 +56,7 @@ export function ContactPage() {
     Boolean(settings?.endereco);
 
   return (
-    <main>
+    <div>
       <section className="bg-stone-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">
@@ -186,6 +186,6 @@ export function ContactPage() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

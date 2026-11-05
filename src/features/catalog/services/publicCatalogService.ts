@@ -22,10 +22,10 @@ type ProductDatabaseRow = {
   nome: string;
   slug: string;
   descricao_curta: string | null;
-  descricao: string | null;
+  descricao?: string | null;
   disponivel: boolean;
-  atributos: Json;
-  mensagem_whatsapp: string | null;
+  atributos?: Json;
+  mensagem_whatsapp?: string | null;
   categoria: PublicProductCategory | null;
   imagens: ProductImageDatabaseRow[] | null;
 };
@@ -36,6 +36,8 @@ export class PublicCatalogError extends Error {
     this.name = "PublicCatalogError";
   }
 }
+
+export const PUBLIC_CATALOG_PAGE_SIZE = 12;
 
 async function mapProductImage(image: ProductImageDatabaseRow): Promise<PublicProductImage> {
   return {
@@ -59,10 +61,10 @@ async function mapPublicProduct(product: ProductDatabaseRow): Promise<PublicProd
     nome: product.nome,
     slug: product.slug,
     descricaoCurta: product.descricao_curta,
-    descricao: product.descricao,
+    descricao: product.descricao ?? null,
     disponivel: product.disponivel,
-    atributos: product.atributos,
-    mensagemWhatsapp: product.mensagem_whatsapp,
+    atributos: product.atributos ?? {},
+    mensagemWhatsapp: product.mensagem_whatsapp ?? null,
     categoria: product.categoria,
     imagens: images,
   };
@@ -96,6 +98,8 @@ export async function listPublicCategories(): Promise<PublicCategory[]> {
 
 export async function listPublicProducts(
   filters: PublicCatalogFilters,
+  offset = 0,
+  limit = PUBLIC_CATALOG_PAGE_SIZE + 1,
 ): Promise<PublicProduct[]> {
   let query = supabase
     .from("produtos")
@@ -106,10 +110,7 @@ export async function listPublicProducts(
       nome,
       slug,
       descricao_curta,
-      descricao,
       disponivel,
-      atributos,
-      mensagem_whatsapp,
       categoria:categorias!produtos_categoria_id_fkey (
         id,
         nome,
@@ -124,9 +125,12 @@ export async function listPublicProducts(
     `,
     )
     .eq("status", "publicado")
+    .order("posicao", { referencedTable: "imagens", ascending: true })
+    .limit(1, { referencedTable: "imagens" })
     .order("nome", {
       ascending: true,
-    });
+    })
+    .range(offset, offset + limit - 1);
 
   const searchTerm = filters.search.trim();
 

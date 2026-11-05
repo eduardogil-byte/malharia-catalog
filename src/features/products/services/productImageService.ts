@@ -7,6 +7,8 @@ import { hasImageSignature } from "../../../shared/utils/hasImageSignature";
 export const MAX_PRODUCT_IMAGES = 8;
 
 export const MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024;
+export const MAX_SOURCE_IMAGE_SIZE = 20 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 1600;
 
 const imageExtensions: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -60,16 +62,19 @@ function mapDatabaseError(error: PostgrestError): Error {
   }
 }
 
-export async function validateProductImage(file: File): Promise<void> {
+export async function validateProductImage(
+  file: File,
+  maxSize = MAX_PRODUCT_IMAGE_SIZE,
+): Promise<void> {
   if (!imageExtensions[file.type]) {
     throw new ProductImageValidationError(
       `O arquivo "${file.name}" não possui um formato permitido.`,
     );
   }
 
-  if (file.size > MAX_PRODUCT_IMAGE_SIZE) {
+  if (file.size > maxSize) {
     throw new ProductImageValidationError(
-      `O arquivo "${file.name}" ultrapassa o limite de 5 MB.`,
+      `O arquivo "${file.name}" ultrapassa o limite de ${maxSize / (1024 * 1024)} MB.`,
     );
   }
 
@@ -82,6 +87,47 @@ export async function validateProductImage(file: File): Promise<void> {
   if (!await hasImageSignature(file)) {
     throw new ProductImageValidationError(`O conteúdo de "${file.name}" não corresponde ao formato informado.`);
   }
+}
+
+export async function prepareProductImage(file: File): Promise<File> {
+  await validateProductImage(file, MAX_SOURCE_IMAGE_SIZE);
+
+  if (typeof createImageBitmap !== "function") {
+    await validateProductImage(file);
+    return file;
+  }
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new ProductImageValidationError(`Não foi possível abrir a imagem "${file.name}".`);
+  }
+
+  try {
+    const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new ProductImageValidationError("Não foi possível preparar a imagem neste navegador.");
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    const optimized = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/webp", 0.82);
+    });
+    if (optimized?.type === "image/webp" && optimized.size > 0 && optimized.size < file.size && optimized.size <= MAX_PRODUCT_IMAGE_SIZE) {
+      const name = file.name.replace(/\.[^.]+$/, "") + ".webp";
+      const webpFile = new File([optimized], name, { type: "image/webp" });
+      await validateProductImage(webpFile);
+      return webpFile;
+    }
+  } finally {
+    bitmap.close();
+  }
+
+  await validateProductImage(file);
+  return file;
 }
 
 function createStoragePath(productId: string, file: File): string {
@@ -135,6 +181,7 @@ export async function uploadProductImages(
   productId: string,
   files: File[],
   existingImagesCount: number,
+  onProgress?: (current: number, total: number, stage: "preparing" | "uploading") => void,
 ): Promise<void> {
   if (files.length === 0) {
     throw new ProductImageValidationError("Selecione pelo menos uma imagem.");
@@ -146,14 +193,19 @@ export async function uploadProductImages(
     );
   }
 
-  await Promise.all(files.map(validateProductImage));
+  const preparedFiles: File[] = [];
+  for (const [index, file] of files.entries()) {
+    onProgress?.(index + 1, files.length, "preparing");
+    preparedFiles.push(await prepareProductImage(file));
+  }
 
   /*
    * Enviamos sequencialmente para que as posições sejam
    * registradas na mesma ordem em que os arquivos foram
    * selecionados.
    */
-  for (const file of files) {
+  for (const [index, file] of preparedFiles.entries()) {
+    onProgress?.(index + 1, preparedFiles.length, "uploading");
     const storagePath = createStoragePath(productId, file);
 
     const { error: uploadError } = await supabase.storage
