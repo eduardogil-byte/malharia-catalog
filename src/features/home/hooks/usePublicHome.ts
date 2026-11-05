@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listPublicHomeSections } from "../services/publicHomeService";
 import type { PublicHomeSection } from "../types/publicHome";
+import { SIGNED_IMAGE_REFRESH_MS } from "../../catalog/services/signProductImage";
 
 export function usePublicHome() {
   const [sections, setSections] = useState<PublicHomeSection[]>([]);
@@ -32,6 +33,13 @@ export function usePublicHome() {
 
   useEffect(() => {
     void loadSections();
+    const timer = window.setInterval(() => { void loadSections(); }, SIGNED_IMAGE_REFRESH_MS);
+    const onVisible = () => { if (!document.hidden) void loadSections(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [loadSections]);
 
   return {

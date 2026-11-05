@@ -13,6 +13,7 @@ import {
   uploadProductImages,
 } from "../services/productImageService";
 import type { ProductImage } from "../types/productImage";
+import { SIGNED_IMAGE_REFRESH_MS } from "../../catalog/services/signProductImage";
 
 type ProductImagesManagerProps = {
   productId: string;
@@ -69,6 +70,13 @@ export function ProductImagesManager({ productId }: ProductImagesManagerProps) {
 
   useEffect(() => {
     void loadImages();
+    const timer = window.setInterval(() => { void loadImages(); }, SIGNED_IMAGE_REFRESH_MS);
+    const onVisible = () => { if (!document.hidden) void loadImages(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [loadImages]);
 
   function clearMessages() {

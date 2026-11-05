@@ -1,7 +1,6 @@
 import { NavLink, Outlet } from "react-router";
 import { useState } from "react";
 import { useAuth } from "../../features/auth/hooks/useAuth";
-import { AdminShell } from "../../components/admin/AdminShell";
 
 const adminNavigationItems = [
   { label: "Visão geral", to: "/admin", end: true },

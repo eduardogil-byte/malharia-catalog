@@ -8,8 +8,10 @@ import type {
   PublicCategory,
   PublicProduct,
 } from "../types/publicCatalog";
+import { SIGNED_IMAGE_REFRESH_MS } from "../services/signProductImage";
 
 export function usePublicCatalog(filters: PublicCatalogFilters) {
+  const { search, categoryId } = filters;
   const [products, setProducts] = useState<PublicProduct[]>([]);
 
   const [categories, setCategories] = useState<PublicCategory[]>([]);
@@ -23,7 +25,7 @@ export function usePublicCatalog(filters: PublicCatalogFilters) {
     setLoadError(null);
 
     try {
-      const data = await listPublicProducts(filters);
+      const data = await listPublicProducts({ search, categoryId });
 
       setProducts(data);
     } catch (error) {
@@ -37,10 +39,17 @@ export function usePublicCatalog(filters: PublicCatalogFilters) {
     } finally {
       setIsLoading(false);
     }
-  }, [filters.search, filters.categoryId]);
+  }, [search, categoryId]);
 
   useEffect(() => {
     void loadProducts();
+    const timer = window.setInterval(() => { void loadProducts(); }, SIGNED_IMAGE_REFRESH_MS);
+    const onVisible = () => { if (!document.hidden) void loadProducts(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [loadProducts]);
 
   useEffect(() => {

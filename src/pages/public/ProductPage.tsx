@@ -6,6 +6,7 @@ import type { PublicProduct } from "../../features/catalog/types/publicCatalog";
 import { createWhatsAppUrl } from "../../features/catalog/utils/createWhatsAppUrl";
 import { getProductAttributes } from "../../features/catalog/utils/getProductAttributes";
 import { usePublicSiteSettings } from "../../features/site-settings/context/PublicSiteSettingsContext";
+import { SIGNED_IMAGE_REFRESH_MS } from "../../features/catalog/services/signProductImage";
 
 export function ProductPage() {
   const { slug } = useParams<{
@@ -62,8 +63,14 @@ export function ProductPage() {
 
     void loadProduct();
 
+    const timer = window.setInterval(() => { void loadProduct(); }, SIGNED_IMAGE_REFRESH_MS);
+    const onVisible = () => { if (!document.hidden) void loadProduct(); };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [slug]);
 
